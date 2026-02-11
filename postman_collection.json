@@ -1,0 +1,286 @@
+{
+  "info": {
+    "name": "Award Management System API",
+    "description": "Complete API collection for Award Management System with Feature Toggle support",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Feature Toggles",
+      "item": [
+        {
+          "name": "Get All Feature Toggles",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/feature-toggles",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "feature-toggles"]
+            }
+          }
+        },
+        {
+          "name": "Create/Update Feature Toggle",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"featureName\": \"use-new-flow\",\n  \"enabled\": false,\n  \"description\": \"Toggle between old and new award processing flow\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/feature-toggles",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "feature-toggles"]
+            }
+          }
+        },
+        {
+          "name": "Enable New Flow",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/feature-toggles/use-new-flow/enable?description=Enabling new flow",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "feature-toggles", "use-new-flow", "enable"],
+              "query": [
+                {
+                  "key": "description",
+                  "value": "Enabling new flow"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Disable New Flow",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/feature-toggles/use-new-flow/disable",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "feature-toggles", "use-new-flow", "disable"]
+            }
+          }
+        },
+        {
+          "name": "Toggle Feature",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/feature-toggles/use-new-flow/toggle",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "feature-toggles", "use-new-flow", "toggle"]
+            }
+          }
+        },
+        {
+          "name": "Check if Feature Enabled",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/feature-toggles/use-new-flow/enabled",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "feature-toggles", "use-new-flow", "enabled"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Awards",
+      "item": [
+        {
+          "name": "Create Award",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Employee of the Month\",\n  \"description\": \"Best performer in February 2026\",\n  \"category\": \"PERFORMANCE\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/awards",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "awards"]
+            }
+          }
+        },
+        {
+          "name": "Get All Awards",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/awards",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "awards"]
+            }
+          }
+        },
+        {
+          "name": "Get Award by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/awards/{{awardId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "awards", "{{awardId}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Award",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Award Name\",\n  \"description\": \"Updated description\",\n  \"status\": \"APPROVED\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/awards/{{awardId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "awards", "{{awardId}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Award",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/awards/{{awardId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "awards", "{{awardId}}"]
+            }
+          }
+        },
+        {
+          "name": "Award to Recipient",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/awards/{{awardId}}/award?recipientId=user123",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "awards", "{{awardId}}", "award"],
+              "query": [
+                {
+                  "key": "recipientId",
+                  "value": "user123"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Approve Award",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/awards/{{awardId}}/approve",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "awards", "{{awardId}}", "approve"]
+            }
+          }
+        },
+        {
+          "name": "Reject Award",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/awards/{{awardId}}/reject",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "awards", "{{awardId}}", "reject"]
+            }
+          }
+        },
+        {
+          "name": "Get Awards by Recipient",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/awards/recipient/user123",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "awards", "recipient", "user123"]
+            }
+          }
+        },
+        {
+          "name": "Get Awards by Category",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/awards/category/PERFORMANCE",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "awards", "category", "PERFORMANCE"]
+            }
+          }
+        },
+        {
+          "name": "Get Awards by Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/awards/status/PENDING",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "awards", "status", "PENDING"]
+            }
+          }
+        },
+        {
+          "name": "Get Awards Count",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/awards/count",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "awards", "count"]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "awardId",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}
