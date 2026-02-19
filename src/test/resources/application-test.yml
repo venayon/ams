@@ -1,0 +1,9 @@
+# Test profile: feature toggle configuration for integration tests
+# Used by FeatureToggleServiceIntegrationTest to verify YAML loading
+feature:
+  toggle:
+    db-fallback-enabled: true
+    flags:
+      # Used by tests that need YAML to take precedence
+      use-new-flow: false
+      yaml-only-feature: true
