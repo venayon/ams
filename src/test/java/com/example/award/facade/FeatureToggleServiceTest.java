@@ -106,6 +106,20 @@ class FeatureToggleServiceTest {
         assertTrue(enabled);
         verify(featureToggleRepository, never()).findByFeatureName(anyString());
     }
+
+    /**
+     * When DB fallback is disabled, repository must not be called for unknown flags.
+     */
+    @Test
+    void isFeatureEnabled_shouldNotCheckDbWhenFallbackDisabled() {
+        properties.setDbFallbackEnabled(false);
+        // No stub: we assert the repository is never called
+
+        boolean enabled = featureToggleService.isFeatureEnabled("any-feature");
+
+        assertFalse(enabled, "When not in YAML and fallback disabled, should default to false");
+        verify(featureToggleRepository, never()).findByFeatureName(anyString());
+    }
     
     @Test
     void enableFeature_shouldCreateNewToggleIfNotExists() {

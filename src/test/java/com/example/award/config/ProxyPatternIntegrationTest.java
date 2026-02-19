@@ -13,6 +13,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 
+import java.time.LocalDateTime;
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -114,5 +117,106 @@ public class ProxyPatternIntegrationTest {
         // Delete works
         awardService.deleteAward(saved.getId());
         assertFalse(awardRepo.existsById(saved.getId()));
+    }
+
+    // ========== Migration confidence tests ==========
+
+    /**
+     * Custom query methods (findByRecipientId, getAwardsByCategory, etc.) must route
+     * through the proxy to AwardRepo when the toggle is disabled.
+     */
+    @Test
+    public void testCustomQueryMethodsUseOldFlowWhenToggleDisabled() {
+        Award award = new Award("Recipient Test", "Desc", "PERFORMANCE");
+        Award saved = awardService.createAward(award);
+        awardService.awardToRecipient(saved.getId(), "recipient-123");
+
+        List<Award> byRecipient = awardService.getAwardsByRecipient("recipient-123");
+        List<Award> byCategory = awardService.getAwardsByCategory("PERFORMANCE");
+        List<Award> byStatus = awardService.getAwardsByStatus("AWARDED");
+
+        assertFalse(byRecipient.isEmpty(), "findByRecipientId should return award when toggle OFF");
+        assertTrue(byRecipient.stream().anyMatch(a -> "recipient-123".equals(a.getRecipientId())));
+        assertFalse(byCategory.isEmpty());
+        assertFalse(byStatus.isEmpty());
+    }
+
+    /**
+     * Custom query methods must route to AwardRepoV2 when the toggle is enabled.
+     */
+    @Test
+    public void testCustomQueryMethodsUseNewFlowWhenToggleEnabled() {
+        FeatureToggle toggle = featureToggleRepository.findByFeatureName("use-new-flow").orElseThrow();
+        toggle.setEnabled(true);
+        featureToggleRepository.save(toggle);
+
+        Award award = new Award("New Flow Query Test", "Desc", "INNOVATION");
+        Award saved = awardService.createAward(award);
+        awardService.awardToRecipient(saved.getId(), "recipient-456");
+
+        List<Award> byRecipient = awardService.getAwardsByRecipient("recipient-456");
+        List<Award> byCategory = awardService.getAwardsByCategory("INNOVATION");
+
+        assertFalse(byRecipient.isEmpty(), "findByRecipientId should route to AwardRepoV2 when toggle ON");
+        assertFalse(byCategory.isEmpty());
+    }
+
+    /**
+     * AwardRepo-only methods (findByCreatedAtAfter, countByStatus) must still work
+     * when new flow is enabled, via facade fallback to AwardRepo.
+     */
+    @Test
+    public void testAwardRepoOnlyMethodsFallbackWhenNewFlowEnabled() {
+        FeatureToggle toggle = featureToggleRepository.findByFeatureName("use-new-flow").orElseThrow();
+        toggle.setEnabled(true);
+        featureToggleRepository.save(toggle);
+
+        Award award = new Award("Fallback Test", "Desc", "PERFORMANCE");
+        Award saved = awardService.createAward(award);
+        saved.setCreatedAt(LocalDateTime.now().minusDays(1));
+        awardRepo.save(saved);
+
+        List<Award> afterDate = awardRepo.findByCreatedAtAfter(LocalDateTime.now().minusDays(2));
+        long count = awardRepo.countByStatus("PENDING");
+
+        assertFalse(afterDate.isEmpty(), "findByCreatedAtAfter must fallback to AwardRepo when NewFlow enabled");
+        assertTrue(count >= 1, "countByStatus must fallback to AwardRepo when NewFlow enabled");
+    }
+
+    /**
+     * Switching the toggle mid-flow must preserve data and route correctly:
+     * award1 with toggle OFF (OldFlow), award2 with toggle ON (NewFlow); both readable.
+     */
+    @Test
+    public void testToggleSwitchMidFlow_preservesDataAndRoutesCorrectly() {
+        Award award1 = new Award("Old Flow Award", "Description 1", "PERFORMANCE");
+        Award saved1 = awardService.createAward(award1);
+        assertNotNull(saved1.getId());
+
+        FeatureToggle toggle = featureToggleRepository.findByFeatureName("use-new-flow").orElseThrow();
+        toggle.setEnabled(true);
+        featureToggleRepository.save(toggle);
+
+        Award award2 = new Award("New Flow Award", "Description 2", "INNOVATION");
+        Award saved2 = awardService.createAward(award2);
+        assertNotNull(saved2.getId());
+
+        assertTrue(awardRepo.existsById(saved1.getId()), "Old-flow award must still exist");
+        assertTrue(awardRepo.existsById(saved2.getId()), "New-flow award must exist");
+        assertEquals("Old Flow Award", awardService.getAwardById(saved1.getId()).orElseThrow().getName());
+        assertEquals("New Flow Award", awardService.getAwardById(saved2.getId()).orElseThrow().getName());
+    }
+
+    /**
+     * Proxy validation (null award, empty name) must apply regardless of toggle state.
+     */
+    @Test
+    public void testProxyValidationAppliesRegardlessOfToggle() {
+        assertThrows(IllegalArgumentException.class, () -> awardRepo.save((Award) null),
+                "Proxy must reject null award");
+
+        Award emptyName = new Award("", "Desc", "PERFORMANCE");
+        assertThrows(IllegalArgumentException.class, () -> awardRepo.save(emptyName),
+                "Proxy must reject award with empty name");
     }
 }
