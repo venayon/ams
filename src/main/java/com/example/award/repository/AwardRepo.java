@@ -3,20 +3,18 @@ package com.example.award.repository;
 import com.example.award.domain.Award;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.mongodb.repository.MongoRepository;
-import org.springframework.data.mongodb.repository.Query;
 import org.springframework.stereotype.Repository;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
 /**
- * Repository interface for New Flow awards processing
+ * Repository interface for Old Flow awards processing
  * Extends MongoRepository for standard CRUD operations
- * Includes enhanced query capabilities for the new processing flow
  */
 @Repository
-@Qualifier("newFlow")
-public interface NewFlow extends MongoRepository<Award, String> {
+@Qualifier("oldFlow")
+public interface AwardRepo extends MongoRepository<Award, String> {
     
     /**
      * Find awards by recipient ID
@@ -39,9 +37,9 @@ public interface NewFlow extends MongoRepository<Award, String> {
     List<Award> findByCategoryAndStatus(String category, String status);
     
     /**
-     * Find awards awarded between two dates
+     * Find awards created after a specific date
      */
-    List<Award> findByAwardedDateBetween(LocalDateTime startDate, LocalDateTime endDate);
+    List<Award> findByCreatedAtAfter(LocalDateTime date);
     
     /**
      * Find award by name
@@ -49,18 +47,7 @@ public interface NewFlow extends MongoRepository<Award, String> {
     Optional<Award> findByName(String name);
     
     /**
-     * Custom query to find awards with specific criteria
+     * Count awards by status
      */
-    @Query("{ 'status': ?0, 'category': ?1, 'awardedDate': { $gte: ?2 } }")
-    List<Award> findAwardsByStatusCategoryAndDate(String status, String category, LocalDateTime date);
-    
-    /**
-     * Count awards by category
-     */
-    long countByCategory(String category);
-    
-    /**
-     * Find top N awards by awarded date
-     */
-    List<Award> findTop10ByOrderByAwardedDateDesc();
+    long countByStatus(String status);
 }

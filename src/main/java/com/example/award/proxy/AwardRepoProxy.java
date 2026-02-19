@@ -2,7 +2,7 @@ package com.example.award.proxy;
 
 import com.example.award.domain.Award;
 import com.example.award.facade.AwardFacade;
-import com.example.award.repository.OldFlow;
+import com.example.award.repository.AwardRepo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,175 +23,32 @@ import java.util.function.Function;
 /**
  * AwardRepoProxy - "Traffic cop"
  * 
- * This proxy implements the OldFlow interface and is marked as @Primary.
- * When service layer autowires OldFlow, Spring will inject this proxy instead.
- * The proxy delegates all calls to AwardFacade, which decides between OldFlow and NewFlow.
+ * This proxy implements the AwardRepo interface and is marked as @Primary.
+ * When service layer autowires AwardRepo, Spring will inject this proxy instead.
+ * The proxy delegates all calls to AwardFacade, which decides between AwardRepo and AwardRepoV2.
  * 
- * Flow: Service Layer → AwardRepoProxy (Traffic Cop) → AwardFacade (Decision Maker) → OldFlow/NewFlow
+ * Flow: Service Layer → AwardRepoProxy (Traffic Cop) → AwardFacade (Decision Maker) → AwardRepo/AwardRepoV2
+ * 
+ * This proxy focuses on implementing only the custom methods from AwardRepo.
+ * All MongoRepository methods are delegated to AwardFacade with minimal implementation.
  */
 @Repository
 @Primary
 @Qualifier("awardRepoProxy")
-public class AwardRepoProxy implements OldFlow {
+public class AwardRepoProxy implements AwardRepo {
     
     private static final Logger logger = LoggerFactory.getLogger(AwardRepoProxy.class);
     
     private final AwardFacade awardFacade;
+    private final MongoRepositoryDelegator mongoDelegator;
     
     @Autowired
     public AwardRepoProxy(AwardFacade awardFacade) {
         this.awardFacade = awardFacade;
+        this.mongoDelegator = new MongoRepositoryDelegator(awardFacade);
     }
     
-    // ========== MongoRepository Methods (delegated to facade) ==========
-    
-    // ========== MongoRepository Methods (delegated to facade) ==========
-    
-    @Override
-    public <S extends Award> S save(S award) {
-        logger.info("AwardRepoProxy: Saving award request received");
-        
-        // Pre-processing validation
-        validateAward(award);
-        
-        // Delegate to facade
-       
-        S savedAward = (S) awardFacade.save(award);
-        
-        logger.info("AwardRepoProxy: Award saved successfully with ID: {}", savedAward.getId());
-        return savedAward;
-    }
-    
-    @Override
-    public <S extends Award> List<S> saveAll(Iterable<S> entities) {
-        logger.info("AwardRepoProxy: Saving multiple awards");
-       
-        List<S> saved = (List<S>) awardFacade.saveAll(entities);
-        logger.info("AwardRepoProxy: {} awards saved", saved.size());
-        return saved;
-    }
-    
-    @Override
-    public Optional<Award> findById(String id) {
-        logger.debug("AwardRepoProxy: Finding award by ID: {}", id);
-        
-        if (id == null || id.trim().isEmpty()) {
-            logger.warn("AwardRepoProxy: Invalid ID provided");
-            throw new IllegalArgumentException("Award ID cannot be null or empty");
-        }
-        
-        Optional<Award> award = awardFacade.findById(id);
-        
-        if (award.isPresent()) {
-            logger.debug("AwardRepoProxy: Award found with ID: {}", id);
-        } else {
-            logger.debug("AwardRepoProxy: No award found with ID: {}", id);
-        }
-        
-        return award;
-    }
-    
-    @Override
-    public boolean existsById(String id) {
-        logger.debug("AwardRepoProxy: Checking existence of award with ID: {}", id);
-        
-        if (id == null || id.trim().isEmpty()) {
-            return false;
-        }
-        
-        boolean exists = awardFacade.existsById(id);
-        logger.debug("AwardRepoProxy: Award with ID {} exists: {}", id, exists);
-        return exists;
-    }
-    
-    @Override
-    public List<Award> findAll() {
-        logger.debug("AwardRepoProxy: Finding all awards");
-        List<Award> awards = awardFacade.findAll();
-        logger.debug("AwardRepoProxy: Found {} awards", awards.size());
-        return awards;
-    }
-    
-    @Override
-    public List<Award> findAll(Sort sort) {
-        logger.debug("AwardRepoProxy: Finding all awards with sort");
-        List<Award> awards = awardFacade.findAll(sort);
-        logger.debug("AwardRepoProxy: Found {} awards", awards.size());
-        return awards;
-    }
-    
-    @Override
-    public Page<Award> findAll(Pageable pageable) {
-        logger.debug("AwardRepoProxy: Finding all awards with pagination");
-        Page<Award> awards = awardFacade.findAll(pageable);
-        logger.debug("AwardRepoProxy: Found {} awards", awards.getTotalElements());
-        return awards;
-    }
-    
-    @Override
-    public List<Award> findAllById(Iterable<String> ids) {
-        logger.debug("AwardRepoProxy: Finding awards by IDs");
-        List<Award> awards = awardFacade.findAllById(ids);
-        logger.debug("AwardRepoProxy: Found {} awards", awards.size());
-        return awards;
-    }
-    
-    @Override
-    public long count() {
-        logger.debug("AwardRepoProxy: Counting awards");
-        long count = awardFacade.count();
-        logger.debug("AwardRepoProxy: Total awards count: {}", count);
-        return count;
-    }
-    
-    @Override
-    public void delete(Award award) {
-        logger.info("AwardRepoProxy: Delete award request received");
-        
-        if (award == null) {
-            logger.error("AwardRepoProxy: Cannot delete null award");
-            throw new IllegalArgumentException("Award cannot be null");
-        }
-        
-        awardFacade.delete(award);
-        logger.info("AwardRepoProxy: Award deleted successfully");
-    }
-    
-    @Override
-    public void deleteById(String id) {
-        logger.info("AwardRepoProxy: Delete award by ID request received: {}", id);
-        
-        if (id == null || id.trim().isEmpty()) {
-            logger.error("AwardRepoProxy: Invalid ID for deletion");
-            throw new IllegalArgumentException("Award ID cannot be null or empty");
-        }
-        
-        awardFacade.deleteById(id);
-        logger.info("AwardRepoProxy: Award deleted successfully with ID: {}", id);
-    }
-    
-    @Override
-    public void deleteAll() {
-        logger.warn("AwardRepoProxy: Delete all awards request received");
-        awardFacade.deleteAll();
-        logger.info("AwardRepoProxy: All awards deleted");
-    }
-    
-    @Override
-    public void deleteAll(Iterable<? extends Award> entities) {
-        logger.info("AwardRepoProxy: Delete multiple awards request received");
-        awardFacade.deleteAll(entities);
-        logger.info("AwardRepoProxy: Multiple awards deleted");
-    }
-    
-    @Override
-    public void deleteAllById(Iterable<? extends String> ids) {
-        logger.info("AwardRepoProxy: Delete awards by IDs request received");
-        awardFacade.deleteAllById(ids);
-        logger.info("AwardRepoProxy: Awards deleted by IDs");
-    }
-    
-    // ========== OldFlow-specific query methods ==========
+    // ========== AwardRepo Custom Methods (explicitly implemented) ==========
     
     @Override
     public List<Award> findByRecipientId(String recipientId) {
@@ -267,67 +124,128 @@ public class AwardRepoProxy implements OldFlow {
         return count;
     }
     
-    // ========== Additional MongoRepository methods (delegated but not commonly used) ==========
+    // ========== MongoRepository Methods (delegated via MongoRepositoryDelegator) ==========
+    // All standard MongoRepository methods are delegated through MongoRepositoryDelegator.
+    // This keeps the proxy file clean and focused on custom AwardRepo methods above.
+    // Full MongoRepository functionality is maintained through delegation.
+    
+    @Override
+    public <S extends Award> S save(S entity) {
+        logger.info("AwardRepoProxy: Saving award request received");
+        validateAward(entity);
+        S savedAward = mongoDelegator.save(entity);
+        logger.info("AwardRepoProxy: Award saved successfully with ID: {}", savedAward.getId());
+        return savedAward;
+    }
+    
+    @Override
+    public <S extends Award> List<S> saveAll(Iterable<S> entities) {
+        return mongoDelegator.saveAll(entities);
+    }
+    
+    @Override
+    public Optional<Award> findById(String id) {
+        return mongoDelegator.findById(id);
+    }
+    
+    @Override
+    public boolean existsById(String id) {
+        return mongoDelegator.existsById(id);
+    }
+    
+    @Override
+    public List<Award> findAll() {
+        return mongoDelegator.findAll();
+    }
+    
+    @Override
+    public List<Award> findAll(Sort sort) {
+        return mongoDelegator.findAll(sort);
+    }
+    
+    @Override
+    public Page<Award> findAll(Pageable pageable) {
+        return mongoDelegator.findAll(pageable);
+    }
+    
+    @Override
+    public List<Award> findAllById(Iterable<String> ids) {
+        return mongoDelegator.findAllById(ids);
+    }
+    
+    @Override
+    public long count() {
+        return mongoDelegator.count();
+    }
+    
+    @Override
+    public void deleteById(String id) {
+        mongoDelegator.deleteById(id);
+    }
+    
+    @Override
+    public void delete(Award entity) {
+        mongoDelegator.delete(entity);
+    }
+    
+    @Override
+    public void deleteAllById(Iterable<? extends String> ids) {
+        mongoDelegator.deleteAllById(ids);
+    }
+    
+    @Override
+    public void deleteAll(Iterable<? extends Award> entities) {
+        mongoDelegator.deleteAll(entities);
+    }
+    
+    @Override
+    public void deleteAll() {
+        mongoDelegator.deleteAll();
+    }
     
     @Override
     public <S extends Award> Optional<S> findOne(Example<S> example) {
-       
-        Optional<S> result = (Optional<S>) awardFacade.findOne((Example<Award>) example);
-        return result;
+        return mongoDelegator.findOne(example);
     }
     
     @Override
     public <S extends Award> List<S> findAll(Example<S> example) {
-       
-        List<S> result = (List<S>) awardFacade.findAll((Example<Award>) example);
-        return result;
+        return mongoDelegator.findAll(example);
     }
     
     @Override
     public <S extends Award> List<S> findAll(Example<S> example, Sort sort) {
-       
-        List<S> result = (List<S>) awardFacade.findAll((Example<Award>) example, sort);
-        return result;
+        return mongoDelegator.findAll(example, sort);
     }
     
     @Override
     public <S extends Award> Page<S> findAll(Example<S> example, Pageable pageable) {
-       
-        Page<S> result = (Page<S>) awardFacade.findAll((Example<Award>) example, pageable);
-        return result;
+        return mongoDelegator.findAll(example, pageable);
     }
     
     @Override
     public <S extends Award> long count(Example<S> example) {
-       
-        return awardFacade.count((Example<Award>) example);
+        return mongoDelegator.count(example);
     }
     
     @Override
     public <S extends Award> boolean exists(Example<S> example) {
-       
-        return awardFacade.exists((Example<Award>) example);
+        return mongoDelegator.exists(example);
     }
     
     @Override
     public <S extends Award, R> R findBy(Example<S> example, Function<FluentQuery.FetchableFluentQuery<S>, R> queryFunction) {
-       
-        //return awardFacade.findBy((Example<Award>) example, (Function<FluentQuery.FetchableFluentQuery<Award>, R>) queryFunction);
-        return null;
+        return mongoDelegator.findBy(example, queryFunction);
     }
     
     @Override
     public <S extends Award> S insert(S entity) {
-       
-        S result = (S) awardFacade.insert(entity);
-        return result;
+        return mongoDelegator.insert(entity);
     }
     
     @Override
     public <S extends Award> List<S> insert(Iterable<S> entities) {
-       
-        List<S> result = (List<S>) awardFacade.insert((Iterable<Award>) entities);
-        return result;
+        return mongoDelegator.insert(entities);
     }
     
     /**

@@ -1,0 +1,41 @@
+spring:
+  application:
+    name: award-management-system
+  
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/award_db
+      database: award_db
+      auto-index-creation: true
+  
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    time-zone: UTC
+
+server:
+  port: 8080
+  servlet:
+    context-path: /
+
+logging:
+  level:
+    root: INFO
+    com.example.award: DEBUG
+    org.springframework.data.mongodb: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+
+# Feature Toggle Configuration
+# Simple YAML-based feature flags with DB fallback option
+feature:
+  toggle:
+    # Enable/disable DB fallback (if true, checks DB when not found in YAML)
+    db-fallback-enabled: true
+    
+    # Feature flags defined in YAML (simpler and cleaner)
+    flags:
+      use-new-flow: false
+      # Add more feature flags here as needed
+      # new-feature: true
+      # another-feature: false

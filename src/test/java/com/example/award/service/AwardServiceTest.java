@@ -1,7 +1,7 @@
 package com.example.award.service;
 
 import com.example.award.domain.Award;
-import com.example.award.repository.OldFlow;
+import com.example.award.repository.AwardRepo;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -27,7 +27,7 @@ import static org.mockito.Mockito.*;
 class AwardServiceTest {
     
     @Mock
-    private OldFlow awardRepository;
+    private AwardRepo awardRepository;
     
     @InjectMocks
     private AwardService awardService;

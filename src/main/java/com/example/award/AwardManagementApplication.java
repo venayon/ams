@@ -11,7 +11,7 @@ import org.springframework.data.mongodb.repository.config.EnableMongoRepositorie
  * - Service Layer pattern with AwardService
  * - Proxy Pattern with AwardRepoProxy ("Traffic cop")
  * - Facade Pattern with AwardFacade ("Decision maker")
- * - Feature Toggle pattern for switching between OldFlow and NewFlow
+ * - Feature Toggle pattern for switching between AwardRepo and AwardRepoV2
  * - MongoDB repositories for data persistence
  */
 @SpringBootApplication

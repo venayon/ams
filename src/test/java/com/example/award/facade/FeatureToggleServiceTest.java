@@ -1,5 +1,6 @@
 package com.example.award.facade;
 
+import com.example.award.config.FeatureToggleProperties;
 import com.example.award.domain.FeatureToggle;
 import com.example.award.repository.FeatureToggleRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -10,7 +11,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -27,7 +30,8 @@ class FeatureToggleServiceTest {
     @Mock
     private FeatureToggleRepository featureToggleRepository;
     
-    @InjectMocks
+    private FeatureToggleProperties properties;
+    
     private FeatureToggleService featureToggleService;
     
     private FeatureToggle testToggle;
@@ -37,11 +41,19 @@ class FeatureToggleServiceTest {
         testToggle = new FeatureToggle("test-feature", true);
         testToggle.setId("toggle-id-123");
         testToggle.setDescription("Test feature toggle");
+        
+        // Create real instance of properties (not mocked)
+        properties = new FeatureToggleProperties();
+        properties.setDbFallbackEnabled(true);
+        properties.setFlags(new HashMap<>());
+        
+        // Create service with real properties and mocked repository
+        featureToggleService = new FeatureToggleService(featureToggleRepository, properties);
     }
     
     @Test
     void isFeatureEnabled_shouldReturnTrueWhenEnabled() {
-        // Given
+        // Given - not in YAML, check DB
         when(featureToggleRepository.findByFeatureName("test-feature"))
                 .thenReturn(Optional.of(testToggle));
         
@@ -55,7 +67,7 @@ class FeatureToggleServiceTest {
     
     @Test
     void isFeatureEnabled_shouldReturnFalseWhenDisabled() {
-        // Given
+        // Given - not in YAML, check DB
         testToggle.setEnabled(false);
         when(featureToggleRepository.findByFeatureName("test-feature"))
                 .thenReturn(Optional.of(testToggle));
@@ -69,7 +81,7 @@ class FeatureToggleServiceTest {
     
     @Test
     void isFeatureEnabled_shouldReturnFalseWhenNotFound() {
-        // Given
+        // Given - not in YAML, not in DB
         when(featureToggleRepository.findByFeatureName(anyString()))
                 .thenReturn(Optional.empty());
         
@@ -78,6 +90,21 @@ class FeatureToggleServiceTest {
         
         // Then
         assertFalse(enabled);
+    }
+    
+    @Test
+    void isFeatureEnabled_shouldReturnYamlValueWhenInYaml() {
+        // Given - feature exists in YAML
+        Map<String, Boolean> yamlFlags = new HashMap<>();
+        yamlFlags.put("yaml-feature", true);
+        properties.setFlags(yamlFlags);
+        
+        // When
+        boolean enabled = featureToggleService.isFeatureEnabled("yaml-feature");
+        
+        // Then
+        assertTrue(enabled);
+        verify(featureToggleRepository, never()).findByFeatureName(anyString());
     }
     
     @Test

@@ -23,7 +23,7 @@ public AwardService(OldFlow awardRepository) {
 
 // In AwardRepoProxy.java
 @Repository
-@Primary  // This makes Spring inject this instead of the actual OldFlow
+@Primary  // This makes Spring inject this instead of the actual AwardRepo
 @Qualifier("awardRepoProxy")
 public class AwardRepoProxy implements OldFlow {
     // Delegates to AwardFacade

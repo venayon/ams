@@ -2,6 +2,13 @@
 
 A Spring Boot application demonstrating the Proxy and Facade design patterns with feature toggle functionality for seamless migration between old and new data flows.
 
+## 📚 Documentation
+
+- **[MIGRATION_STRATEGY.md](MIGRATION_STRATEGY.md)** - Comprehensive guide to Proxy + Facade migration strategy, advantages, drawbacks, and best practices
+- **[FEATURE_TOGGLE_CONFIGURATION.md](FEATURE_TOGGLE_CONFIGURATION.md)** - Feature toggle configuration guide (YAML + DB fallback)
+- **[ARCHITECTURE.md](ARCHITECTURE.md)** - Detailed system architecture and component responsibilities
+- **[PROXY_CONFIGURATION.md](PROXY_CONFIGURATION.md)** - Spring bean configuration and dependency injection details
+
 ## Architecture Overview
 
 ```
@@ -30,7 +37,7 @@ Checks Feature Toggle
 **Key Configuration:**
 ```java
 @Repository
-@Primary  // Makes Spring inject this instead of actual OldFlow
+@Primary  // Makes Spring inject this instead of actual AwardRepo
 @Qualifier("awardRepoProxy")
 public class AwardRepoProxy implements OldFlow {
     // Service layer gets this proxy transparently!
@@ -44,8 +51,9 @@ public class AwardRepoProxy implements OldFlow {
 
 ### 3. Feature Toggle Pattern - FeatureToggle
 - Controls which repository implementation is used
-- Enables/disables new flow without code changes
-- Stored in MongoDB for runtime configuration
+- **Primary source**: `application.yml` (simple, clean configuration)
+- **Fallback**: MongoDB database (for runtime changes)
+- Priority: YAML → Database → false (default)
 
 ## Components
 
@@ -230,16 +238,16 @@ The application will start on `http://localhost:8080`
 
 ## Usage Example
 
-### 1. Create the Feature Toggle
+### 1. Configure Feature Toggle in application.yml (Recommended)
 
-```bash
-curl -X POST http://localhost:8080/api/feature-toggles \
-  -H "Content-Type: application/json" \
-  -d '{
-    "featureName": "use-new-flow",
-    "enabled": false,
-    "description": "Toggle between old and new award processing flow"
-  }'
+Edit `src/main/resources/application.yml`:
+
+```yaml
+feature:
+  toggle:
+    db-fallback-enabled: true
+    flags:
+      use-new-flow: false  # Start with old flow
 ```
 
 ### 2. Create an Award (using OldFlow)
@@ -256,9 +264,19 @@ curl -X POST http://localhost:8080/api/awards \
 
 ### 3. Enable New Flow
 
+**Option A: Update YAML** (requires restart)
+```yaml
+feature:
+  toggle:
+    flags:
+      use-new-flow: true  # Change to true
+```
+
+**Option B: Use REST API** (runtime change, saves to DB)
 ```bash
 curl -X POST http://localhost:8080/api/feature-toggles/use-new-flow/enable
 ```
+*Note: If feature exists in YAML, YAML value takes precedence when reading*
 
 ### 4. Create Another Award (using NewFlow)
 
@@ -345,10 +363,47 @@ award-management-system/
 
 ## Configuration
 
-The feature toggle can be managed through:
-1. REST API endpoints
-2. Direct MongoDB updates
-3. Application startup initialization
+### Feature Toggle Configuration
+
+Feature toggles are managed through **application.yml** (primary) with optional database fallback:
+
+#### Simple YAML Configuration (Recommended)
+
+Edit `src/main/resources/application.yml`:
+
+```yaml
+feature:
+  toggle:
+    # Enable/disable DB fallback (if true, checks DB when not found in YAML)
+    db-fallback-enabled: true
+    
+    # Feature flags defined in YAML (simpler and cleaner)
+    flags:
+      use-new-flow: false
+      # Add more feature flags here:
+      # new-feature: true
+      # another-feature: false
+```
+
+**Priority Order:**
+1. **application.yml** - Checked first (simplest, cleanest)
+2. **Database** - Checked if `db-fallback-enabled: true` and not in YAML
+3. **false** - Default if not found anywhere
+
+#### Database Configuration (Optional)
+
+For runtime changes, use REST API or direct MongoDB updates:
+
+```bash
+# Enable feature via REST API (saves to DB)
+curl -X POST http://localhost:8080/api/feature-toggles/use-new-flow/enable
+
+# Note: If feature exists in YAML, YAML value takes precedence when reading
+```
+
+**When to use YAML vs Database:**
+- **YAML**: Static flags, environment-specific configs, simple flags
+- **Database**: Runtime changes, dynamic flags, A/B testing
 
 ## License
 

@@ -67,7 +67,7 @@ The application will start on `http://localhost:8080`
 ### Step 4: Test the API
 
 ```bash
-# Create a feature toggle (using OldFlow initially)
+# Create a feature toggle (using AwardRepo initially)
 curl -X POST http://localhost:8080/api/feature-toggles \
   -H "Content-Type: application/json" \
   -d '{
@@ -76,7 +76,7 @@ curl -X POST http://localhost:8080/api/feature-toggles \
     "description": "Toggle between old and new flow"
   }'
 
-# Create an award (goes to OldFlow)
+# Create an award (goes to AwardRepo)
 curl -X POST http://localhost:8080/api/awards \
   -H "Content-Type: application/json" \
   -d '{
@@ -85,10 +85,10 @@ curl -X POST http://localhost:8080/api/awards \
     "category": "PERFORMANCE"
   }'
 
-# Enable NewFlow
+# Enable AwardRepoV2
 curl -X POST http://localhost:8080/api/feature-toggles/use-new-flow/enable
 
-# Create another award (goes to NewFlow)
+# Create another award (goes to AwardRepoV2)
 curl -X POST http://localhost:8080/api/awards \
   -H "Content-Type: application/json" \
   -d '{
@@ -169,10 +169,10 @@ public class AwardService {
 No code deployment needed:
 
 ```bash
-# Switch to NewFlow
+# Switch to AwardRepoV2
 curl -X POST http://localhost:8080/api/feature-toggles/use-new-flow/enable
 
-# Switch to OldFlow  
+# Switch to AwardRepo  
 curl -X POST http://localhost:8080/api/feature-toggles/use-new-flow/disable
 ```
 

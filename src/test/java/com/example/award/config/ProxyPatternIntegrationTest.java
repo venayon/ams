@@ -4,7 +4,7 @@ import com.example.award.domain.Award;
 import com.example.award.domain.FeatureToggle;
 import com.example.award.proxy.AwardRepoProxy;
 import com.example.award.repository.FeatureToggleRepository;
-import com.example.award.repository.OldFlow;
+import com.example.award.repository.AwardRepo;
 import com.example.award.service.AwardService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -19,9 +19,9 @@ import static org.junit.jupiter.api.Assertions.*;
  * Integration test demonstrating the Proxy Pattern configuration
  * 
  * This test verifies that:
- * 1. Service layer injects OldFlow
+ * 1. Service layer injects AwardRepo
  * 2. AwardRepoProxy is actually injected (due to @Primary)
- * 3. The proxy correctly delegates to OldFlow or NewFlow based on feature toggle
+ * 3. The proxy correctly delegates to AwardRepo or AwardRepoV2 based on feature toggle
  * 
  * Uses Testcontainers for real MongoDB instance
  */
@@ -34,7 +34,7 @@ public class ProxyPatternIntegrationTest {
     private AwardService awardService;
     
     @Autowired
-    private OldFlow oldFlow;  // This will actually be AwardRepoProxy
+    private AwardRepo awardRepo;  // This will actually be AwardRepoProxy
     
     @Autowired
     private FeatureToggleRepository featureToggleRepository;
@@ -43,7 +43,7 @@ public class ProxyPatternIntegrationTest {
     public void setup() {
         // Clean up
         featureToggleRepository.deleteAll();
-        oldFlow.deleteAll();
+        awardRepo.deleteAll();
         
         // Create feature toggle in disabled state
         FeatureToggle toggle = new FeatureToggle("use-new-flow", false);
@@ -53,14 +53,14 @@ public class ProxyPatternIntegrationTest {
     
     @Test
     public void testServiceLayerReceivesProxy() {
-        // Verify that the injected OldFlow is actually AwardRepoProxy
-        assertTrue(oldFlow instanceof AwardRepoProxy, 
-                  "OldFlow should be proxied by AwardRepoProxy due to @Primary annotation");
+        // Verify that the injected AwardRepo is actually AwardRepoProxy
+        assertTrue(awardRepo instanceof AwardRepoProxy,
+                  "AwardRepo should be proxied by AwardRepoProxy due to @Primary annotation");
     }
     
     @Test
     public void testProxyDelegatesToOldFlowWhenToggleDisabled() {
-        // Feature toggle is disabled, should use OldFlow
+        // Feature toggle is disabled, should use AwardRepo
         Award award = new Award("Test Award", "Description", "PERFORMANCE");
         
         Award saved = awardService.createAward(award);
@@ -69,7 +69,7 @@ public class ProxyPatternIntegrationTest {
         assertEquals("PENDING", saved.getStatus(), "Status should be PENDING");
         
         // Verify it's in the database
-        assertTrue(oldFlow.existsById(saved.getId()), "Award should exist in database");
+        assertTrue(awardRepo.existsById(saved.getId()), "Award should exist in database");
     }
     
     @Test
@@ -80,7 +80,7 @@ public class ProxyPatternIntegrationTest {
         toggle.setEnabled(true);
         featureToggleRepository.save(toggle);
         
-        // Now requests should go to NewFlow
+        // Now requests should go to AwardRepoV2
         Award award = new Award("Test Award 2", "Description 2", "INNOVATION");
         
         Award saved = awardService.createAward(award);
@@ -88,14 +88,14 @@ public class ProxyPatternIntegrationTest {
         assertNotNull(saved.getId(), "Award should be saved");
         assertEquals("PENDING", saved.getStatus(), "Status should be PENDING");
         
-        // Verify it's in the database (NewFlow uses same collection)
-        assertTrue(oldFlow.existsById(saved.getId()), "Award should exist in database");
+        // Verify it's in the database (AwardRepoV2 uses same collection)
+        assertTrue(awardRepo.existsById(saved.getId()), "Award should exist in database");
     }
     
     @Test
     public void testServiceLayerCodeUnchanged() {
         // The service layer doesn't know about the proxy
-        // It just uses OldFlow interface methods
+        // It just uses AwardRepo interface methods
         
         Award award = new Award("Service Test", "Testing service layer", "TEST");
         Award saved = awardService.createAward(award);
@@ -113,6 +113,6 @@ public class ProxyPatternIntegrationTest {
         
         // Delete works
         awardService.deleteAward(saved.getId());
-        assertFalse(oldFlow.existsById(saved.getId()));
+        assertFalse(awardRepo.existsById(saved.getId()));
     }
 }

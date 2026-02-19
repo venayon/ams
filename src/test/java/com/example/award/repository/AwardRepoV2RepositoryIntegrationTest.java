@@ -17,45 +17,45 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Integration tests for NewFlow repository
+ * Integration tests for AwardRepoV2 repository
  * Uses Testcontainers for MongoDB
  */
 @DataMongoTest
 @Import(TestContainersConfiguration.class)
 @ActiveProfiles("test")
-class NewFlowRepositoryIntegrationTest {
+class AwardRepoV2RepositoryIntegrationTest {
     
     @Autowired
-    @Qualifier("newFlow")
-    private NewFlow newFlowRepository;
+    @Qualifier("awardRepoV2")
+    private AwardRepoV2 awardRepoV2Repository;
     
     private Award testAward1;
     private Award testAward2;
     
     @BeforeEach
     void setUp() {
-        newFlowRepository.deleteAll();
+        awardRepoV2Repository.deleteAll();
         
         testAward1 = new Award("Award 1", "Description 1", "PERFORMANCE");
         testAward1.setStatus("PENDING");
         testAward1.setAwardedDate(LocalDateTime.now().minusDays(5));
-        testAward1 = newFlowRepository.save(testAward1);
+        testAward1 = awardRepoV2Repository.save(testAward1);
         
         testAward2 = new Award("Award 2", "Description 2", "INNOVATION");
         testAward2.setStatus("APPROVED");
         testAward2.setAwardedDate(LocalDateTime.now().minusDays(2));
-        testAward2 = newFlowRepository.save(testAward2);
+        testAward2 = awardRepoV2Repository.save(testAward2);
     }
     
     @AfterEach
     void tearDown() {
-        newFlowRepository.deleteAll();
+        awardRepoV2Repository.deleteAll();
     }
     
     @Test
     void findByAwardedDateBetween_shouldReturnAwardsInRange() {
         // When
-        List<Award> awards = newFlowRepository.findByAwardedDateBetween(
+        List<Award> awards = awardRepoV2Repository.findByAwardedDateBetween(
                 LocalDateTime.now().minusDays(6),
                 LocalDateTime.now().minusDays(1)
         );
@@ -67,7 +67,7 @@ class NewFlowRepositoryIntegrationTest {
     @Test
     void findAwardsByStatusCategoryAndDate_shouldReturnMatchingAwards() {
         // When
-        List<Award> awards = newFlowRepository.findAwardsByStatusCategoryAndDate(
+        List<Award> awards = awardRepoV2Repository.findAwardsByStatusCategoryAndDate(
                 "PENDING",
                 "PERFORMANCE",
                 LocalDateTime.now().minusDays(10)
@@ -81,8 +81,8 @@ class NewFlowRepositoryIntegrationTest {
     @Test
     void countByCategory_shouldReturnCount() {
         // When
-        long performanceCount = newFlowRepository.countByCategory("PERFORMANCE");
-        long innovationCount = newFlowRepository.countByCategory("INNOVATION");
+        long performanceCount = awardRepoV2Repository.countByCategory("PERFORMANCE");
+        long innovationCount = awardRepoV2Repository.countByCategory("INNOVATION");
         
         // Then
         assertEquals(1, performanceCount);
@@ -95,11 +95,11 @@ class NewFlowRepositoryIntegrationTest {
         for (int i = 3; i <= 12; i++) {
             Award award = new Award("Award " + i, "Desc", "CAT");
             award.setAwardedDate(LocalDateTime.now().minusDays(i));
-            newFlowRepository.save(award);
+            awardRepoV2Repository.save(award);
         }
         
         // When
-        List<Award> topAwards = newFlowRepository.findTop10ByOrderByAwardedDateDesc();
+        List<Award> topAwards = awardRepoV2Repository.findTop10ByOrderByAwardedDateDesc();
         
         // Then
         assertTrue(topAwards.size() <= 10);
@@ -112,10 +112,10 @@ class NewFlowRepositoryIntegrationTest {
     void findByRecipientId_shouldReturnAwards() {
         // Given
         testAward1.setRecipientId("recipient-123");
-        newFlowRepository.save(testAward1);
+        awardRepoV2Repository.save(testAward1);
         
         // When
-        List<Award> awards = newFlowRepository.findByRecipientId("recipient-123");
+        List<Award> awards = awardRepoV2Repository.findByRecipientId("recipient-123");
         
         // Then
         assertEquals(1, awards.size());
@@ -124,7 +124,7 @@ class NewFlowRepositoryIntegrationTest {
     @Test
     void findByCategory_shouldReturnAwards() {
         // When
-        List<Award> awards = newFlowRepository.findByCategory("PERFORMANCE");
+        List<Award> awards = awardRepoV2Repository.findByCategory("PERFORMANCE");
         
         // Then
         assertEquals(1, awards.size());
@@ -134,7 +134,7 @@ class NewFlowRepositoryIntegrationTest {
     @Test
     void findByStatus_shouldReturnAwards() {
         // When
-        List<Award> awards = newFlowRepository.findByStatus("APPROVED");
+        List<Award> awards = awardRepoV2Repository.findByStatus("APPROVED");
         
         // Then
         assertEquals(1, awards.size());

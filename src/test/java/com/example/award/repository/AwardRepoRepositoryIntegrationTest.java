@@ -18,47 +18,47 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Integration tests for OldFlow repository
+ * Integration tests for AwardRepo repository
  * Uses Testcontainers to spin up a real MongoDB instance
  */
 @DataMongoTest
 @Import(TestContainersConfiguration.class)
 @ActiveProfiles("test")
-class OldFlowRepositoryIntegrationTest {
+class AwardRepoRepositoryIntegrationTest {
     
     @Autowired
-    @Qualifier("oldFlow")
-    private OldFlow oldFlowRepository;
+    @Qualifier("awardRepo")
+    private AwardRepo awardRepoRepository;
     
     private Award testAward1;
     private Award testAward2;
     
     @BeforeEach
     void setUp() {
-        oldFlowRepository.deleteAll();
+        awardRepoRepository.deleteAll();
         
         testAward1 = new Award("Award 1", "Description 1", "PERFORMANCE");
         testAward1.setStatus("PENDING");
         testAward1.setRecipientId("recipient-1");
         testAward1.setCreatedAt(LocalDateTime.now().minusDays(5));
-        testAward1 = oldFlowRepository.save(testAward1);
+        testAward1 = awardRepoRepository.save(testAward1);
         
         testAward2 = new Award("Award 2", "Description 2", "INNOVATION");
         testAward2.setStatus("APPROVED");
         testAward2.setRecipientId("recipient-2");
         testAward2.setCreatedAt(LocalDateTime.now().minusDays(2));
-        testAward2 = oldFlowRepository.save(testAward2);
+        testAward2 = awardRepoRepository.save(testAward2);
     }
     
     @AfterEach
     void tearDown() {
-        oldFlowRepository.deleteAll();
+        awardRepoRepository.deleteAll();
     }
     
     @Test
     void findByRecipientId_shouldReturnAwards() {
         // When
-        List<Award> awards = oldFlowRepository.findByRecipientId("recipient-1");
+        List<Award> awards = awardRepoRepository.findByRecipientId("recipient-1");
         
         // Then
         assertEquals(1, awards.size());
@@ -68,7 +68,7 @@ class OldFlowRepositoryIntegrationTest {
     @Test
     void findByCategory_shouldReturnAwards() {
         // When
-        List<Award> awards = oldFlowRepository.findByCategory("PERFORMANCE");
+        List<Award> awards = awardRepoRepository.findByCategory("PERFORMANCE");
         
         // Then
         assertEquals(1, awards.size());
@@ -78,8 +78,8 @@ class OldFlowRepositoryIntegrationTest {
     @Test
     void findByStatus_shouldReturnAwards() {
         // When
-        List<Award> pendingAwards = oldFlowRepository.findByStatus("PENDING");
-        List<Award> approvedAwards = oldFlowRepository.findByStatus("APPROVED");
+        List<Award> pendingAwards = awardRepoRepository.findByStatus("PENDING");
+        List<Award> approvedAwards = awardRepoRepository.findByStatus("APPROVED");
         
         // Then
         assertEquals(1, pendingAwards.size());
@@ -91,7 +91,7 @@ class OldFlowRepositoryIntegrationTest {
     @Test
     void findByCategoryAndStatus_shouldReturnMatchingAwards() {
         // When
-        List<Award> awards = oldFlowRepository.findByCategoryAndStatus("PERFORMANCE", "PENDING");
+        List<Award> awards = awardRepoRepository.findByCategoryAndStatus("PERFORMANCE", "PENDING");
         
         // Then
         assertEquals(1, awards.size());
@@ -101,7 +101,7 @@ class OldFlowRepositoryIntegrationTest {
     @Test
     void findByCreatedAtAfter_shouldReturnRecentAwards() {
         // When
-        List<Award> awards = oldFlowRepository.findByCreatedAtAfter(
+        List<Award> awards = awardRepoRepository.findByCreatedAtAfter(
                 LocalDateTime.now().minusDays(3)
         );
         
@@ -113,7 +113,7 @@ class OldFlowRepositoryIntegrationTest {
     @Test
     void findByName_shouldReturnAward() {
         // When
-        Optional<Award> award = oldFlowRepository.findByName("Award 1");
+        Optional<Award> award = awardRepoRepository.findByName("Award 1");
         
         // Then
         assertTrue(award.isPresent());
@@ -123,8 +123,8 @@ class OldFlowRepositoryIntegrationTest {
     @Test
     void countByStatus_shouldReturnCount() {
         // When
-        long pendingCount = oldFlowRepository.countByStatus("PENDING");
-        long approvedCount = oldFlowRepository.countByStatus("APPROVED");
+        long pendingCount = awardRepoRepository.countByStatus("PENDING");
+        long approvedCount = awardRepoRepository.countByStatus("APPROVED");
         
         // Then
         assertEquals(1, pendingCount);
@@ -137,14 +137,14 @@ class OldFlowRepositoryIntegrationTest {
         Award newAward = new Award("New Award", "New Description", "TEST");
         
         // When
-        Award saved = oldFlowRepository.save(newAward);
+        Award saved = awardRepoRepository.save(newAward);
         
         // Then
         assertNotNull(saved.getId());
         assertEquals("New Award", saved.getName());
         
         // Verify persistence
-        Optional<Award> found = oldFlowRepository.findById(saved.getId());
+        Optional<Award> found = awardRepoRepository.findById(saved.getId());
         assertTrue(found.isPresent());
     }
     
@@ -154,16 +154,16 @@ class OldFlowRepositoryIntegrationTest {
         String awardId = testAward1.getId();
         
         // When
-        oldFlowRepository.deleteById(awardId);
+        awardRepoRepository.deleteById(awardId);
         
         // Then
-        assertFalse(oldFlowRepository.existsById(awardId));
+        assertFalse(awardRepoRepository.existsById(awardId));
     }
     
     @Test
     void findAll_shouldReturnAllAwards() {
         // When
-        List<Award> awards = oldFlowRepository.findAll();
+        List<Award> awards = awardRepoRepository.findAll();
         
         // Then
         assertEquals(2, awards.size());
@@ -172,7 +172,7 @@ class OldFlowRepositoryIntegrationTest {
     @Test
     void count_shouldReturnTotalCount() {
         // When
-        long count = oldFlowRepository.count();
+        long count = awardRepoRepository.count();
         
         // Then
         assertEquals(2, count);

@@ -4,7 +4,7 @@ import com.example.award.config.TestContainersConfiguration;
 import com.example.award.domain.Award;
 import com.example.award.domain.FeatureToggle;
 import com.example.award.repository.FeatureToggleRepository;
-import com.example.award.repository.OldFlow;
+import com.example.award.repository.AwardRepo;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -37,7 +37,7 @@ class AwardControllerIntegrationTest {
     private ObjectMapper objectMapper;
     
     @Autowired
-    private OldFlow awardRepository;
+    private AwardRepo awardRepository;
     
     @Autowired
     private FeatureToggleRepository featureToggleRepository;
@@ -47,7 +47,7 @@ class AwardControllerIntegrationTest {
         awardRepository.deleteAll();
         featureToggleRepository.deleteAll();
         
-        // Initialize feature toggle as disabled (use OldFlow)
+        // Initialize feature toggle as disabled (use AwardRepo)
         FeatureToggle toggle = new FeatureToggle("use-new-flow", false);
         toggle.setDescription("Test toggle");
         featureToggleRepository.save(toggle);

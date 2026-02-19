@@ -1,8 +1,8 @@
 package com.example.award.facade;
 
 import com.example.award.domain.Award;
-import com.example.award.repository.NewFlow;
-import com.example.award.repository.OldFlow;
+import com.example.award.repository.AwardRepoV2;
+import com.example.award.repository.AwardRepo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,17 +30,17 @@ public class AwardFacade {
     
     private static final Logger logger = LoggerFactory.getLogger(AwardFacade.class);
     
-    private final OldFlow oldFlowRepository;
-    private final NewFlow newFlowRepository;
+    private final AwardRepo awardRepoRepository;
+    private final AwardRepoV2 awardRepoV2Repository;
     private final FeatureToggleService featureToggleService;
     
     @Autowired
     public AwardFacade(
-            @Qualifier("oldFlow") OldFlow oldFlowRepository,
-            @Qualifier("newFlow") NewFlow newFlowRepository,
+            @Qualifier("awardRepo") AwardRepo awardRepoRepository,
+            @Qualifier("awardRepoV2") AwardRepoV2 awardRepoV2Repository,
             FeatureToggleService featureToggleService) {
-        this.oldFlowRepository = oldFlowRepository;
-        this.newFlowRepository = newFlowRepository;
+        this.awardRepoRepository = awardRepoRepository;
+        this.awardRepoV2Repository = awardRepoV2Repository;
         this.featureToggleService = featureToggleService;
     }
     
@@ -52,15 +52,15 @@ public class AwardFacade {
         
         if (useNewFlow) {
             logger.debug("Using New Flow for award processing");
-            return newFlowRepository;
+            return awardRepoV2Repository;
         } else {
             logger.debug("Using Old Flow for award processing");
-            return oldFlowRepository;
+            return awardRepoRepository;
         }
     }
     
     /**
-     * Get the typed repository (OldFlow or NewFlow) for query-specific methods
+     * Get the typed repository (AwardRepo or AwardRepoV2) for query-specific methods
      */
     private boolean isUsingNewFlow() {
         return featureToggleService.isFeatureEnabled("use-new-flow");
@@ -71,7 +71,7 @@ public class AwardFacade {
     public <S extends Award> S save(S award) {
         MongoRepository<Award, String> repository = determineFlow();
         logger.info("Saving award: {} using {}", award.getName(), 
-                   repository == newFlowRepository ? "NewFlow" : "OldFlow");
+                   repository == awardRepoV2Repository ? "AwardRepoV2" : "AwardRepo");
         return repository.save(award);
     }
     
@@ -118,14 +118,14 @@ public class AwardFacade {
     public void deleteById(String id) {
         MongoRepository<Award, String> repository = determineFlow();
         logger.info("Deleting award by id: {} using {}", id, 
-                   repository == newFlowRepository ? "NewFlow" : "OldFlow");
+                   repository == awardRepoV2Repository ? "AwardRepoV2" : "AwardRepo");
         repository.deleteById(id);
     }
     
     public void delete(Award award) {
         MongoRepository<Award, String> repository = determineFlow();
         logger.info("Deleting award: {} using {}", award.getId(), 
-                   repository == newFlowRepository ? "NewFlow" : "OldFlow");
+                   repository == awardRepoV2Repository ? "AwardRepoV2" : "AwardRepo");
         repository.delete(award);
     }
     
@@ -190,69 +190,69 @@ public class AwardFacade {
         return repository.insert(entities);
     }
     
-    // ========== Query Methods (available in both OldFlow and NewFlow) ==========
+    // ========== Query Methods (available in both AwardRepo and AwardRepoV2) ==========
     
-    // ========== Query Methods (available in both OldFlow and NewFlow) ==========
+    // ========== Query Methods (available in both AwardRepo and AwardRepoV2) ==========
     
     public List<Award> findByRecipientId(String recipientId) {
         if (isUsingNewFlow()) {
-            return newFlowRepository.findByRecipientId(recipientId);
+            return awardRepoV2Repository.findByRecipientId(recipientId);
         } else {
-            return oldFlowRepository.findByRecipientId(recipientId);
+            return awardRepoRepository.findByRecipientId(recipientId);
         }
     }
     
     public List<Award> findByCategory(String category) {
         if (isUsingNewFlow()) {
-            return newFlowRepository.findByCategory(category);
+            return awardRepoV2Repository.findByCategory(category);
         } else {
-            return oldFlowRepository.findByCategory(category);
+            return awardRepoRepository.findByCategory(category);
         }
     }
     
     public List<Award> findByStatus(String status) {
         if (isUsingNewFlow()) {
-            return newFlowRepository.findByStatus(status);
+            return awardRepoV2Repository.findByStatus(status);
         } else {
-            return oldFlowRepository.findByStatus(status);
+            return awardRepoRepository.findByStatus(status);
         }
     }
     
     public List<Award> findByCategoryAndStatus(String category, String status) {
         if (isUsingNewFlow()) {
-            return newFlowRepository.findByCategoryAndStatus(category, status);
+            return awardRepoV2Repository.findByCategoryAndStatus(category, status);
         } else {
-            return oldFlowRepository.findByCategoryAndStatus(category, status);
+            return awardRepoRepository.findByCategoryAndStatus(category, status);
         }
     }
     
     public Optional<Award> findByName(String name) {
         if (isUsingNewFlow()) {
-            return newFlowRepository.findByName(name);
+            return awardRepoV2Repository.findByName(name);
         } else {
-            return oldFlowRepository.findByName(name);
+            return awardRepoRepository.findByName(name);
         }
     }
     
-    // ========== OldFlow-specific methods ==========
+    // ========== AwardRepo-specific methods ==========
     
     public List<Award> findByCreatedAtAfter(LocalDateTime date) {
         if (isUsingNewFlow()) {
-            // NewFlow doesn't have this method, use OldFlow as fallback
-            logger.warn("findByCreatedAtAfter not available in NewFlow, using OldFlow");
-            return oldFlowRepository.findByCreatedAtAfter(date);
+            // AwardRepoV2 doesn't have this method, use AwardRepo as fallback
+            logger.warn("findByCreatedAtAfter not available in AwardRepoV2, using AwardRepo");
+            return awardRepoRepository.findByCreatedAtAfter(date);
         } else {
-            return oldFlowRepository.findByCreatedAtAfter(date);
+            return awardRepoRepository.findByCreatedAtAfter(date);
         }
     }
     
     public long countByStatus(String status) {
         if (isUsingNewFlow()) {
-            // NewFlow doesn't have this method, use OldFlow as fallback
-            logger.warn("countByStatus not available in NewFlow, using OldFlow");
-            return oldFlowRepository.countByStatus(status);
+            // AwardRepoV2 doesn't have this method, use AwardRepo as fallback
+            logger.warn("countByStatus not available in AwardRepoV2, using AwardRepo");
+            return awardRepoRepository.countByStatus(status);
         } else {
-            return oldFlowRepository.countByStatus(status);
+            return awardRepoRepository.countByStatus(status);
         }
     }
 }

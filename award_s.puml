@@ -1,0 +1,113 @@
+@startuml AwardService_Sequence
+
+!theme plain
+
+skinparam backgroundColor transparent
+skinparam sequenceArrowColor #4a90d9
+skinparam sequenceArrowThickness 2
+
+skinparam participant {
+    BackgroundColor #4a90d9
+    BorderColor #2c6fad
+    FontColor #ffffff
+    FontName "Courier New"
+    FontSize 13
+}
+
+skinparam note {
+    BackgroundColor #f0f4f8
+    BorderColor #e05c6e
+    FontColor #333333
+    FontName "Courier New"
+}
+
+skinparam sequence {
+    LifeLineBorderColor #4a90d9
+    LifeLineBackgroundColor #d6e8fa
+    GroupBorderColor #e05c6e
+    GroupFontColor #e05c6e
+    GroupBackgroundColor #fff0f0
+    DividerBackgroundColor #eef2f7
+    DividerBorderColor #4a90d9
+    DividerFontColor #2c6fad
+    BoxBorderColor #4a90d9
+    BoxFontColor #2c6fad
+    BoxBackgroundColor #eef2f7
+    ArrowFontColor #555555
+    ArrowFontName "Courier New"
+}
+
+skinparam shadowing false
+skinparam roundCorner 6
+
+title <color:#2c6fad><size:16>Award Service — Proxy + Facade Pattern Flow</size></color>
+
+participant "ServiceLayer\n(AwardService)" as SL
+participant "PROXY PATTERN\n(AwardRepoProxy)" as PROXY
+participant "FACADE PATTERN\n(AwardFacade)" as FACADE
+participant "OldFlow\n(Repository)" as OLD
+participant "NewFlow\n(Repository)" as NEW
+database   "MongoDB\nDatabase" as DB
+
+== Save Award Request ==
+
+SL -> PROXY : save(award)\n<color:#a0a0c0>//calls OldFlow interface//</color>
+
+activate PROXY
+
+note over PROXY #eef2f7
+  <color:#2c6fad>Cross-Cutting Concerns</color>
+  • Validates award
+  • Logs operation
+  • Handles errors
+end note
+
+PROXY -> PROXY : validate(award)
+PROXY -> PROXY : log("save operation")
+
+alt <color:#e94560>Validation Failed</color>
+    PROXY --> SL : <color:#e94560>throw ValidationException</color>
+end
+
+PROXY -> FACADE : delegate(award)\n<color:#a0a0c0>//delegates to//</color>
+
+activate FACADE
+
+note over FACADE #eef2f7
+  <color:#2c6fad>Business Routing</color>
+  • Checks feature toggle
+  • Decides: OldFlow or NewFlow?
+  • Routes to correct repository
+end note
+
+FACADE -> FACADE : checkFeatureToggle()
+
+alt <color:#a0ffa0>Toggle OFF — OldFlow</color>
+    FACADE -> OLD : save(award)
+    activate OLD
+    OLD -> DB : insert/update document
+    activate DB
+    DB --> OLD : <color:#a0ffa0>success</color>
+    deactivate DB
+    OLD --> FACADE : <color:#a0ffa0>AwardEntity</color>
+    deactivate OLD
+
+else <color:#ffd700>Toggle ON — NewFlow</color>
+    FACADE -> NEW : save(award)
+    activate NEW
+    NEW -> DB : insert/update document
+    activate DB
+    DB --> NEW : <color:#a0ffa0>success</color>
+    deactivate DB
+    NEW --> FACADE : <color:#a0ffa0>AwardEntity</color>
+    deactivate NEW
+end
+
+FACADE --> PROXY : <color:#a0ffa0>AwardEntity</color>
+deactivate FACADE
+
+PROXY -> PROXY : log("save completed")
+PROXY --> SL : <color:#a0ffa0>AwardEntity</color>
+deactivate PROXY
+
+@enduml

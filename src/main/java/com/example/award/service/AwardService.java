@@ -1,7 +1,7 @@
 package com.example.award.service;
 
 import com.example.award.domain.Award;
-import com.example.award.repository.OldFlow;
+import com.example.award.repository.AwardRepo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,10 +15,10 @@ import java.util.Optional;
  * Service Layer - Your Code
  * Business logic for award management
  * 
- * NOTE: This service injects OldFlow, but due to @Primary annotation on AwardRepoProxy,
+ * NOTE: This service injects AwardRepo, but due to @Primary annotation on AwardRepoProxy,
  * Spring will actually inject the AwardRepoProxy instance.
  * 
- * Flow: AwardService → OldFlow (actually AwardRepoProxy) → AwardFacade → OldFlow/NewFlow
+ * Flow: AwardService → AwardRepo (actually AwardRepoProxy) → AwardFacade → AwardRepo/AwardRepoV2
  */
 @Service
 @Transactional
@@ -26,11 +26,11 @@ public class AwardService {
     
     private static final Logger logger = LoggerFactory.getLogger(AwardService.class);
     
-    // Injecting OldFlow, but AwardRepoProxy (marked @Primary) will be injected instead
-    private final OldFlow awardRepository;
+    // Injecting AwardRepo, but AwardRepoProxy (marked @Primary) will be injected instead
+    private final AwardRepo awardRepository;
     
     @Autowired
-    public AwardService(OldFlow awardRepository) {
+    public AwardService(AwardRepo awardRepository) {
         this.awardRepository = awardRepository;
     }
     
